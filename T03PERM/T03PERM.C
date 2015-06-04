@@ -28,7 +28,7 @@ VOID Write( INT A )
   FILE *F;
   static INT k = 0;
 
-  if ((F = fopen("Res.log", "a")) != NULL)
+  if ((F = fopen("a.log", "a")) != NULL)
   {
     k++;
     fprintf(F, "%d ", A);
@@ -39,7 +39,7 @@ VOID Write( INT A )
     fclose(F);
 
   }
-} /* End of 'WriteToFile' function */
+} /* End of 'Write' function */
 
 INT CountParity( VOID )
 {
@@ -74,7 +74,7 @@ VOID Go( INT Pos )
         Parity = !Parity;
     Swap(&P[Pos], &P[i]);
   }
-} 
+} /* End of 'GO' function */
 
 VOID main( VOID )
 {

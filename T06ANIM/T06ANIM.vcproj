@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="T05GLOBE"
-	ProjectGUID="{3676460D-6667-4F75-BDD4-4DD2901A2AD9}"
-	RootNamespace="T05GLOBE"
+	Name="T06ANIM"
+	ProjectGUID="{1C0BE93D-3FCB-4E41-B3A8-A8986EB9517D}"
+	RootNamespace="T06ANIM"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -66,7 +66,7 @@
 				AdditionalLibraryDirectories="X:\TGRKIT\LIB;$(DXSDK_DIR)Lib\0x86;$(OPENAL_DIR)Libs;"
 				GenerateManifest="false"
 				GenerateDebugInformation="true"
-				SubSystem="2"
+				SubSystem="1"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -179,15 +179,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\GLOBEDRAW.C"
-				>
-			</File>
-			<File
-				RelativePath=".\IMAGE.C"
-				>
-			</File>
-			<File
-				RelativePath=".\T05GLOBE.C"
+				RelativePath=".\MAIN.C"
 				>
 			</File>
 		</Filter>
@@ -197,15 +189,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\DEF.H"
-				>
-			</File>
-			<File
-				RelativePath=".\GLOBE.H"
-				>
-			</File>
-			<File
-				RelativePath=".\IMAGE.H"
+				RelativePath=".\VEC.H"
 				>
 			</File>
 		</Filter>

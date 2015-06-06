@@ -15,10 +15,26 @@
 INT N;
 INT Parity = 0;
 INT SUM = 0;
+FILE *F;
 
-DOUBLE A[MAX][MAX];
+DOUBLE A[MAX][MAX], DETERM = 0;
 INT P[MAX];
 
+VOID Load( CHAR *FileName )
+{
+  FILE *File;
+  INT i, j;
+
+  if ((File = fopen(FileName, "r")) != NULL)
+  {
+    fscanf(File, "%d", &N);
+    for (i = 0; i < N; i++)
+      for (j = 0; j < N; j++)
+        fscanf(File, "%lf", &A[i][j]);
+
+    fclose(File);
+  }
+} /* End of 'Load' function */
 
 VOID Swap( INT *A, INT *B )
 {
@@ -28,52 +44,70 @@ VOID Swap( INT *A, INT *B )
   *B = tmp;
 } /* End of 'Swap' function */
 
-VOID Load( CHAR *FileName )
+VOID Write( DOUBLE A )
 {
-  FILE *F;
-  INT i, j;
-
-  if ((F = fopen(FileName, "r")) != NULL)
+  if ((F = fopen("Res.log", "a")) != NULL)
   {
-    fscanf(F, "%d", &N);
-    for (i = 0; i < N; i++)
-      for (j = 0; j < N; j++)
-        fscanf(F, "%lf", &A[i][j]);
+    fprintf(F, "The determinant is %g", A);
     fclose(F);
   }
-} /* End of "Load" function */
+} /* End of 'Write' function */
 
- VOID Go( INT Pos )
+
+VOID Go( INT Pos )
 {
-  INT i;
+  INT i, x, save;
 
   if (Pos == N)
   {
+    DOUBLE PROD = 1;
+
     for (i = 0; i < N; i++)
-      printf("%d ", P[i]);
-    printf(" - %s\n", Parity ? "odd" : "even");
+    {
+      PROD *= A[i][P[i]];
+
+      if (Parity == 0)
+        DETERM += PROD;
+      else
+        DETERM -= PROD;
+    }
+
     return;
   }
-  for (i = Pos; i < N; i++)
+
+  save = Parity;
+  Go(Pos + 1);
+  for (i = Pos + 1; i < N; i++)
   {
-    if (Pos != i)
-      Parity = !Parity;
+    Parity = !Parity;
     Swap(&P[Pos], &P[i]);
     Go(Pos + 1);
-   
-    if (Pos != i)
-        Parity = !Parity;
-    Swap(&P[Pos], &P[i]);
   }
-} /* End of 'GO' function */
 
-/*VOID main( VOID )
+  Parity = save;
+  x = P[Pos];
+
+  for (i = Pos + 1; i < N; i++)
+    P[i - 1] = P[i];
+  P[N - 1] = x;
+} /* End of 'Go' function */
+
+VOID main( VOID )
 {
-  INT i;
+  INT i, j, k;
+
+  if ((F = fopen("Res.log", "w")) != NULL)
+    fclose(F);
 
   Load("m.txt");
-  for (i = 0; i < N; i++)
-  printf("%i", SUM);
 
-  getch(); */
-} /* End of "main" function */
+  for (i = 0; i < N; i++)
+    P[i] = i + 1;
+
+  Go(0);
+  Write(DETERM);
+
+  getch();
+} /* End of 'main' function */
+
+/* END OF 'T04DETERM.C' FILE */

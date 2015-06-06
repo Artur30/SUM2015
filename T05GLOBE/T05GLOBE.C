@@ -4,11 +4,18 @@
  * PURPOSE: WinAPI windowed applicatoin sample
  */
 
-#include <windows.h>
+#include <time.h>
+#include <string.h>
 #include <math.h>
+#include <stdio.h>
+
+#include <windows.h>
+
+#include "globe.h"
 
 /* Имя класса окна */
 #define WND_CLASS_NAME "My window class"
+
 
 /* Ссылка вперед */
 LRESULT CALLBACK MyWindowFunc( HWND hWnd, UINT Msg,
@@ -23,7 +30,7 @@ LRESULT CALLBACK MyWindowFunc( HWND hWnd, UINT Msg,
  *   - командная строка:
  *       CHAR *CmdLine;
  * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ:
- *   (INT) код возврата в операционную систему.
+ *   (INT) код возврата в операционную си стему.
  *   0 - при успехе.
  */
 INT WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
@@ -32,7 +39,6 @@ INT WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
   WNDCLASS wc;
   HWND hWnd;
   MSG msg;
-  /* HINSTANCE hIns = LoadLibrary("shell32"); */
 
   /* Регистрация класса окна */
   wc.style = CS_VREDRAW | CS_HREDRAW;                   /* Стиль окна: полностью перерисовывать
@@ -60,7 +66,7 @@ INT WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
   /* Создание окна */
   hWnd =
     CreateWindow(WND_CLASS_NAME,    /* Имя класса окна */
-      "EYES",                      /* Заголовок окна */
+      "GLOBE",                      /* Заголовок окна */
       WS_OVERLAPPEDWINDOW,          /* Стили окна - окно общего вида */
       CW_USEDEFAULT, CW_USEDEFAULT, /* Позиция окна (x, y) - по умолчанию */
       CW_USEDEFAULT, CW_USEDEFAULT, /* Размеры окна (w, h) - по умолчанию */
@@ -76,25 +82,62 @@ INT WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
   while (GetMessage(&msg, NULL, 0, 0))
     /* Передача сообщений в функцию окна */
     DispatchMessage(&msg);
+
   return 30;
 } /* End of 'WinMain' function */
 
 
-/* Функция рисования глаза.
- * АГРУМЕНТЫ:
- *   - сонтекст окна:
- *       HDC hDC;
- *   - абсцисса левого верхнего края прямоугольника, ограничивающего глаз:
- *       int left;
- *   - ордината левого верхнего края прямоугольника, ограничивающего глаз:
- *       int top;
- *   - абсцисса правого нижнего края прямоугольника, ограничивающего глаз:
- *       int right;
- *   - ордината правого нижнего края прямоугольника, ограничивающего глаз:
- *       int bottom;
- * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ:
- *   (VOID) ничего
+/* Функция переключения в/из полноэкранного режима
+ * с учетом нескольких мониторов.
+ * АРГУМЕНТЫ: 
+ *   - дескриптор окна:
+ *       HWND hWnd;
+ * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ: Нет.
  */
+VOID FlipFullScreen( HWND hWnd )
+{
+  static BOOL IsFullScreen = FALSE;
+  static RECT SaveRC;
+
+  if (!IsFullScreen)
+  {
+    RECT rc;
+    HMONITOR hmon;
+    MONITORINFOEX moninfo;
+
+    /* Save old size of window */
+    GetWindowRect(hWnd, &SaveRC);
+
+    hmon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+
+    moninfo.cbSize = sizeof(moninfo);
+    GetMonitorInfo(hmon, (MONITORINFO *)&moninfo);
+
+    /* переходим в полный экран */
+    /* для одного монитора:
+    rc.left = 0;
+    rc.top = 0;
+    rc.right = GetSystemMetrics(SM_CXSCREEN);
+    rc.bottom = GetSystemMetrics(SM_CXSCREEN);
+    */
+
+    rc = moninfo.rcMonitor;
+
+    AdjustWindowRect(&rc, GetWindowLong(hWnd, GWL_STYLE), FALSE);
+
+    SetWindowPos(hWnd, HWND_TOPMOST, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top + 201,
+      SWP_NOOWNERZORDER);
+    IsFullScreen = TRUE;
+  }
+  else
+  {
+    SetWindowPos(hWnd, HWND_TOPMOST, SaveRC.left, SaveRC.top,
+      SaveRC.right - SaveRC.left, SaveRC.bottom - SaveRC.top,
+      SWP_NOOWNERZORDER);
+    IsFullScreen = FALSE;
+  }
+} /* End of 'FlipFullScreen' function */
+
 
 /* Функция обработки сообщения окна.
  * АРГУМЕНТЫ:
@@ -109,55 +152,90 @@ INT WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
  * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ:
  *   (LRESULT) - в зависимости от сообщения.
  */
-
 LRESULT CALLBACK MyWindowFunc( HWND hWnd, UINT Msg,
                                WPARAM wParam, LPARAM lParam )
 {
-  HDC hDC;         /* Display context */
-  static INT w, h, x, y;
-  POINT pt;        /* The point of cursor */
-  PAINTSTRUCT ps;
-  INT CEyeF = 240, CEyeFy = 240, CEyeS = 560, CEyeSy = 240, R = 65;
-  INT x1, y1, x2, y2; /* The coordinats of center */
+  HDC hDC;
+  static HDC hMemDC;
+  static INT w, h;
+  static BITMAP bm;
+  static HBITMAP hBm;
 
   switch (Msg)
   {
   case WM_CREATE:
     SetTimer(hWnd, 111, 50, NULL);
+
+    /* создаем контекст в памяти */
+    hDC = GetDC(hWnd);
+    hMemDC = CreateCompatibleDC(hDC);
+    ReleaseDC(hWnd, hDC);
     return 0;
 
   case WM_SIZE:
     w = LOWORD(lParam);
     h = HIWORD(lParam);
+
+    /* создаем картинку размером с окно */
+    if (hBm != NULL)
+      DeleteObject(hBm);
+
+    hDC = GetDC(hWnd);
+    hBm = CreateCompatibleBitmap(hDC, w, h);
+    ReleaseDC(hWnd, hDC);
+
+    SelectObject(hMemDC, hBm);
+    SendMessage(hWnd, WM_TIMER, 111, 0);
     return 0;
 
   case WM_TIMER:
+    /* Clear Background */
+    SelectObject(hMemDC, GetStockObject(NULL_PEN));
+    SelectObject(hMemDC, GetStockObject(DC_BRUSH));
+    SetDCBrushColor(hMemDC, RGB(255, 255, 255));
+    Rectangle(hMemDC, 0, 0, w + 1, h + 1);
+
+    SelectObject(hMemDC, GetStockObject(DC_BRUSH));
+    SetDCBrushColor(hMemDC, RGB(255, 0, 0));
+
+    GlobeBuild();
+    GlobeDraw(hMemDC, w, h);
+
+
+    InvalidateRect(hWnd, NULL, TRUE);
     return 0;
 
-  case WM_PAINT:
-    hDC = BeginPaint(hWnd, &ps);
-
-    EndPaint(hWnd, &ps);
-    return 0;
-
-  case WM_KEYDOWN:
-    return 0;
-
-  case WM_MOUSEMOVE:
-
-    return 0;
+ /* case WM_KEYDOWN:
+    if (wParam == 'F')
+      FlipFullScreen(hWnd);
+    if (wParam == 27)
+      SendMessage(hWnd, WM_CLOSE, 0, 0);
+    if (wParam == 'W')
+      IsWire = !IsWire;
+    if (wParam == VK_UP)
+      Radius += 30;
+    if (wParam == VK_DOWN)
+      Radius -= 30;
+    return 0; */
 
   case WM_CLOSE:
-    if (MessageBox(hWnd, "Are you sure to exit this program?", "Exit", MB_YESNO | MB_ICONQUESTION) == IDNO)
+    if (MessageBox(hWnd, "Are you shure to exit from program?",
+          "Exit", MB_YESNO | MB_ICONQUESTION) == IDNO)
       return 0;
     break;
 
+  case WM_ERASEBKGND:
+    BitBlt((HDC)wParam, 0, 0, w, h, hMemDC, 0, 0, SRCCOPY);
+    return 0;
+
   case WM_DESTROY:
+    DeleteDC(hMemDC);
+    DeleteObject(hBm);
     KillTimer(hWnd, 111);
-    PostMessage(hWnd, WM_QUIT, 0, 0);
+    PostQuitMessage(0);
     return 0;
   }
   return DefWindowProc(hWnd, Msg, wParam, lParam);
 } /* End of 'MyWindowFunc' function */
 
-/* END OF 'T01FWIN.C' FILE */
+/* END OF 'T05GLOBE.C' FILE */

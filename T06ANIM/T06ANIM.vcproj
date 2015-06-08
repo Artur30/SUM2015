@@ -198,6 +198,10 @@
 				RelativePath=".\UNIT.C"
 				>
 			</File>
+			<File
+				RelativePath=".\VEC.C"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

@@ -8,12 +8,13 @@
 #define __ANIM_H_
 
 #include "def.h"
+#include "vec.h"
 
 /* Максимальное количество элементов анимации */
-#define VG4_MAX_UNITS 3000
+#define PD6_MAX_UNITS 3000
 
 /* Объявление типа объектов анимации "вперед" */
-typedef struct tagvg4UNIT vg4UNIT;
+typedef struct tagpd6UNIT pd6UNIT;
 
 /* Структура хранения контекста анимации */
 typedef struct
@@ -24,10 +25,45 @@ typedef struct
   HDC hDC;            /* Контекст вывода */
 
   /* Массив элементов анимации и их количество */
-  vg4UNIT *Units[VG4_MAX_UNITS]; 
+  pd6UNIT *Units[PD6_MAX_UNITS]; 
   INT NumOfUnits;
 
-} vg4ANIM;
+  /* Подсистема синхронизации */
+  DBL
+    Time,            /* время в секундах со старта анимации */
+    GlobalTime,      /* время -"-, но без паузы */
+    DeltaTime,       /* межкадровое время в секундах */
+    GlobalDeltaTime, /* межкадровое время в секундах без паузы */
+    FPS;             /* количество кадров в секунду */
+  BOOL
+    IsPause;         /* флаг паузы */
+
+  /* Подсистема ввода */
+  BYTE
+    Keys[256],       /* Сотояние клавиш клавиатуры и мыши */
+    KeysOld[256],    /* Сотояние клавиш на предыдущем кадре */
+    KeysClick[256];  /* Флаги однократного нажатия */
+  INT
+    MsDeltaX, MsDeltaY, /* Относительные координаты курсора мыши */
+    MsX, MsY,        /* Абсолютные координаты курсора мыши */
+    MsWheel;         /* Состояние колеса мыши */
+  BYTE
+    JButs[32],       /* Сотояние кнопок джойстика */
+    JButsOld[32],    /* Сотояние кнопок джойстика на предыдущем кадре */
+    JButsClick[32],  /* Флаги однократного нажатия кнопок джойстика */
+    JPOV;            /* Переключатель POV - 0..8 */
+  DBL
+    JX, JY, JZ, JR, JU, JV; /* Оси джойстика (-1.0 .. 1.0*/
+
+  VEC PosModel;
+  DBL AngleX, AngleY, AngleZ;
+} pd6ANIM;
+
+/* Глобальная переменная - счетчик прокрутки колеса мыши */
+extern INT PD6_MouseWheel;
+
+/* Системный контекст анимации */
+extern pd6ANIM PD6_Anim;
 
 /* Базовые поля объекта анимации:
  * - размер структуры для наследования
@@ -35,25 +71,25 @@ typedef struct
  * - идентификатор объеткта:
  *     INT Id;
  * - указатель на функцию инициализации
- *     VOID (*Init)( vg4UNIT *Unit, vg4ANIM *Ani );
+ *     VOID (*Init)( pd6UNIT *Unit, pd6ANIM *Ani );
  * - указатель на функцию деинициализации
- *     VOID (*Close)( vg4UNIT *Unit, vg4ANIM *Ani );
+ *     VOID (*Close)( pd6UNIT *Unit, pd6ANIM *Ani );
  * - указатель на функцию обновления межкадровых параметров
- *     VOID (*Response)( vg4UNIT *Unit, vg4ANIM *Ani );
+ *     VOID (*Response)( pd6UNIT *Unit, pd6ANIM *Ani );
  * - указатель на функцию построения
- *     VOID (*Render)( vg4UNIT *Unit, vg4ANIM *Ani );
+ *     VOID (*Render)( pd6UNIT *Unit, pd6ANIM *Ani );
  */
-#define VG4_UNIT_BASE_FIELDS \
+#define PD6_UNIT_BASE_FIELDS \
   INT Size;                                          \
-  VOID (*Init)( vg4UNIT *Unit, vg4ANIM *Ani );       \
-  VOID (*Close)( vg4UNIT *Unit, vg4ANIM *Ani );      \
-  VOID (*Response)( vg4UNIT *Unit, vg4ANIM *Ani );   \
-  VOID (*Render)( vg4UNIT *Unit, vg4ANIM *Ani )
+  VOID (*Init)( pd6UNIT *Unit, pd6ANIM *Ani );       \
+  VOID (*Close)( pd6UNIT *Unit, pd6ANIM *Ani );      \
+  VOID (*Response)( pd6UNIT *Unit, pd6ANIM *Ani );   \
+  VOID (*Render)( pd6UNIT *Unit, pd6ANIM *Ani )
 
 /* Базовый тип объекта анимации */
-struct tagvg4UNIT
+struct tagpd6UNIT
 {
-  VG4_UNIT_BASE_FIELDS;
+  PD6_UNIT_BASE_FIELDS;
 };
 
 /* Функция инициализации анимации.
@@ -62,13 +98,13 @@ struct tagvg4UNIT
  *       HWND hWnd;
  * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ: Нет.
  */
-VOID VG4_AnimInit( HWND hWnd );
+VOID PD6_AnimInit( HWND hWnd );
 
 /* Функция деинициализации анимации.
  * АРГУМЕНТЫ: Нет.
  * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ: Нет.
  */
-VOID VG4_AnimClose( VOID );
+VOID PD6_AnimClose( VOID );
 
 /* Функция обработки изменения размера области вывода.
  * АРГУМЕНТЫ:
@@ -76,49 +112,57 @@ VOID VG4_AnimClose( VOID );
  *       INT W, H;
  * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ: Нет.
  */
-VOID VG4_AnimResize( INT W, INT H );
+VOID PD6_AnimResize( INT W, INT H );
 
 /* Функция построения кадра анимации.
  * АРГУМЕНТЫ: Нет.
  * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ: Нет.
  */
-VOID VG4_AnimRender( VOID );
+VOID PD6_AnimRender( VOID );
 
 /* Функция вывода кадра анимации.
  * АРГУМЕНТЫ: Нет.
  * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ: Нет.
  */
-VOID VG4_AnimCopyFrame( VOID );
+VOID PD6_AnimCopyFrame( VOID );
 
 /* Функция добавления в систему объекта анимации.
  * АРГУМЕНТЫ:
  *   - добавляемый объект анимации:
- *       vg4UNIT *Unit;
+ *       pd6UNIT *Unit;
  * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ: Нет.
  */
-VOID VG4_AnimAddUnit( vg4UNIT *Unit );
+VOID PD6_AnimAddUnit( pd6UNIT *Unit );
 
 /* Функция переключения в/из полноэкранного режима
  * с учетом нескольких мониторов.
  * АРГУМЕНТЫ: Нет.
  * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ: Нет.
  */
-VOID VG4_AnimFlipFullScreen( VOID );
+VOID PD6_AnimFlipFullScreen( VOID );
 
 /* Функция создания объекта анимации.
  * АРГУМЕНТЫ:
  *   - размер структуры объекта анимации:
  *       INT Size;
  * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ:
- *   (vg4UNIT *) указатель на созданный объект анимации.
+ *   (pd6UNIT *) указатель на созданный объект анимации.
  */
-vg4UNIT * VG4_AnimUnitCreate( INT Size );
+pd6UNIT * PD6_AnimUnitCreate( INT Size );
 
 /* Функция выхода из анимации.
  * АРГУМЕНТЫ: Нет.
  * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ: Нет.
  */
-VOID VG4_AnimDoExit( VOID );
+VOID PD6_AnimDoExit( VOID );
+
+/* Функция установки паузы анимации.
+ * АРГУМЕНТЫ:
+ *   - флаг паузы:
+ *       BOOL NewPauseFlag;
+ * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ: Нет.
+ */
+VOID PD6_AnimSetPause( BOOL NewPauseFlag );
 
 #endif /* __ANIM_H_ */
 

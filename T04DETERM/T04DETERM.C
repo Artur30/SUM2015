@@ -1,25 +1,19 @@
 /* FILE NAME: T04DETERM.C
- * PROGRAMMER: Gumirov Artur
+ * PROGRAMMER: AG6
  * DATE: 04.06.2015
- * PURPOSE: Permutation samples.
+ * PURPOSE: Determinant samples.
  */
 
 #include <stdio.h>
-
 #include <conio.h>
-
 #include <windows.h>
 
-#define MAX 30
+#define MAX 10
 
-INT N;
-INT Parity = 0;
-INT SUM = 0;
+INT AG6_P[MAX];
+DOUBLE Matr[MAX][MAX], DETERM = 0;
+INT Parity = 0, N;
 FILE *F;
-
-DOUBLE A[MAX][MAX], DETERM = 0;
-INT P[MAX];
-
 VOID Load( CHAR *FileName )
 {
   FILE *File;
@@ -30,12 +24,13 @@ VOID Load( CHAR *FileName )
     fscanf(File, "%d", &N);
     for (i = 0; i < N; i++)
       for (j = 0; j < N; j++)
-        fscanf(File, "%lf", &A[i][j]);
+        fscanf(File, "%lf", &Matr[i][j]);
 
     fclose(File);
   }
 } /* End of 'Load' function */
 
+ 
 VOID Swap( INT *A, INT *B )
 {
   INT tmp = *A;
@@ -44,16 +39,17 @@ VOID Swap( INT *A, INT *B )
   *B = tmp;
 } /* End of 'Swap' function */
 
-VOID Write( DOUBLE A )
+
+VOID WriteToFile( DOUBLE A )
 {
   if ((F = fopen("Res.log", "a")) != NULL)
   {
     fprintf(F, "The determinant is %g", A);
     fclose(F);
   }
-} /* End of 'Write' function */
+} /* End of 'WriteToFile' function */
 
-
+   
 VOID Go( INT Pos )
 {
   INT i, x, save;
@@ -64,7 +60,7 @@ VOID Go( INT Pos )
 
     for (i = 0; i < N; i++)
     {
-      PROD *= A[i][P[i]];
+      PROD *= Matr[i][AG6_P[i]];
 
       if (Parity == 0)
         DETERM += PROD;
@@ -80,17 +76,18 @@ VOID Go( INT Pos )
   for (i = Pos + 1; i < N; i++)
   {
     Parity = !Parity;
-    Swap(&P[Pos], &P[i]);
+    Swap(&AG6_P[Pos], &AG6_P[i]);
     Go(Pos + 1);
   }
 
   Parity = save;
-  x = P[Pos];
+  x = AG6_P[Pos];
 
   for (i = Pos + 1; i < N; i++)
-    P[i - 1] = P[i];
-  P[N - 1] = x;
+    AG6_P[i - 1] = AG6_P[i];
+  AG6_P[N - 1] = x;
 } /* End of 'Go' function */
+
 
 VOID main( VOID )
 {
@@ -102,12 +99,10 @@ VOID main( VOID )
   Load("m.txt");
 
   for (i = 0; i < N; i++)
-    P[i] = i + 1;
+    AG6_P[i] = i + 1;
 
   Go(0);
-  Write(DETERM);
-
-  getch();
+  WriteToFile(DETERM);
 } /* End of 'main' function */
 
 /* END OF 'T04DETERM.C' FILE */

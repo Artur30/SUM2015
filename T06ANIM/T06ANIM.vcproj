@@ -179,55 +179,79 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\ANIM.C"
+				RelativePath=".\DEF.H"
 				>
 			</File>
 			<File
 				RelativePath=".\MAIN.C"
 				>
 			</File>
-			<File
-				RelativePath=".\OBJ.C"
+			<Filter
+				Name="3D Object Support"
 				>
-			</File>
-			<File
-				RelativePath=".\UBALL.C"
+				<File
+					RelativePath=".\VEC.C"
+					>
+				</File>
+				<File
+					RelativePath=".\VEC.H"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Anim System"
 				>
-			</File>
-			<File
-				RelativePath=".\UNIT.C"
+				<File
+					RelativePath=".\ANIM.C"
+					>
+				</File>
+				<File
+					RelativePath=".\ANIM.H"
+					>
+				</File>
+				<File
+					RelativePath=".\UNIT.C"
+					>
+				</File>
+				<Filter
+					Name="Rendering"
+					>
+					<File
+						RelativePath=".\Render.C"
+						>
+					</File>
+					<File
+						RelativePath=".\Render.H"
+						>
+					</File>
+				</Filter>
+			</Filter>
+			<Filter
+				Name="Units"
 				>
-			</File>
-			<File
-				RelativePath=".\VEC.C"
-				>
-			</File>
+				<File
+					RelativePath=".\UBALL.C"
+					>
+				</File>
+				<File
+					RelativePath=".\UCONTRL.C"
+					>
+				</File>
+				<File
+					RelativePath=".\UCOW.C"
+					>
+				</File>
+				<File
+					RelativePath=".\UNITS.H"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath=".\ANIM.H"
-				>
-			</File>
-			<File
-				RelativePath=".\DEF.H"
-				>
-			</File>
-			<File
-				RelativePath=".\OBJ.H"
-				>
-			</File>
-			<File
-				RelativePath=".\UNITS.H"
-				>
-			</File>
-			<File
-				RelativePath=".\VEC.H"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

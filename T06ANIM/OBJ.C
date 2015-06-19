@@ -1,4 +1,4 @@
-/* FILE NAME: OBJ.H
+/* FILE NAME: OBJ.C
  * PROGRAMMER: Gumirov Artur
  * DATE: 06.06.2015
  * PURPOSE: WinAPI windowed application sample
@@ -7,23 +7,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "anim.h"
+#include "vec.h"
 #include "obj.h"
 
 VEC *ObjV; /* Vertex coordinates */
 INT ObjNumOfV; /* Number of model vertices */
 
-VOID ObjDraw( HDC hDC )
+VOID ObjDraw( HDC hDC, INT X, INT Y, DWORD Color, ag6ANIM *Ani )
 {
   INT i;
+  DBL x = sin(30);
 
+  srand(30);
   for (i = 0; i < ObjNumOfV; i++)
   {
-    ObjV[i].X = ObjV[i].X * 50;
-    ObjV[i].Y = ObjV[i].Y * 50;
-    ObjV[i].Z = ObjV[i].Z * 50;
-
-    SelectObject(hDC, GetStockObject(BLACK_BRUSH));
-    Ellipse(hDC, 300 - ObjV[i].X - 2, 300 - ObjV[i].Y + 2, 300 + ObjV[i].X + 2, 300 - ObjV[i].Y - 2);
+    SetDCBrushColor(hDC, Color);
+    Ellipse(hDC,X + ObjV[i].X - 4, Y - ObjV[i].Y - 4, X + ObjV[i].X + 4, Y - ObjV[i].Y + 4);
   }
 
 } /* End of 'ObjDraw' function */
@@ -69,6 +69,7 @@ BOOL ObjLoad( CHAR *FileName )
     {
       sscanf(Buf + 2, "%lf%lf%lf",
         &ObjV[nv].X, &ObjV[nv].Y, &ObjV[nv].Z);
+      ObjV[nv] = VecMulNum(ObjV[nv], 60);
       nv++;
     }
   }

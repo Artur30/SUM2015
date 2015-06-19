@@ -8,7 +8,6 @@
 #define __OBJ3D_H_
 
 #include "vec.h"
-
 #include "def.h"
 
 /* Draw object functioln.
@@ -17,7 +16,7 @@
  *       HDC hDC;
  * RETURNS: None.
  */
-VOID ObjDraw( HDC hDC );
+VOID ObjDraw( HDC hDC, INT X, INT Y, DWORD Color, ag6ANIM *Ani );
 
 /* Draw object functioln.
  * ARGUMENTS:

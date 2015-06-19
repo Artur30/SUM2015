@@ -3,17 +3,28 @@
  * DATE: 06.06.2015
  * PURPOSE: WinAPI windowed application sample
  */
+
+#include <time.h>
+#include <string.h>
+#include <math.h>
+#include <stdio.h>
+
+#include <windows.h>
+
 #include "anim.h"
 #include "units.h"
 
-#define WND_CLASS_NAME "My Window Class Name"
+/* Имя класса окна */
+#define WND_CLASS_NAME "My window class"
 
-/* Ссылки вперед */
-LRESULT CALLBACK MainWindowFunc( HWND hWnd, UINT Msg,
-                                 WPARAM wParam, LPARAM lParam );
+/* Глобальная переменная - счетчик прокрутки колеса мыши */
+INT PD6_MouseWheel;
+
+/* Ссылка вперед */
+LRESULT CALLBACK MyWindowFunc( HWND hWnd, UINT Msg,
+                               WPARAM wParam, LPARAM lParam );
 
 /* Главная функция программы.
- * АРГУМЕНТЫ:
  *   - дескриптор экземпляра приложения:
  *       HINSTANCE hInstance;
  *   - дескриптор предыдущего экземпляра приложения
@@ -21,72 +32,127 @@ LRESULT CALLBACK MainWindowFunc( HWND hWnd, UINT Msg,
  *       HINSTANCE hPrevInstance;
  *   - командная строка:
  *       CHAR *CmdLine;
- *   - флаг показа окна (см. SW_SHOWNORMAL, SW_SHOWMINIMIZED, SW_***):
- *       INT ShowCmd;
  * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ:
- *   (INT) код возврата в операционную систему.
+ *   (INT) код возврата в операционную си стему.
+ *   0 - при успехе.
  */
 INT WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
                     CHAR *CmdLine, INT ShowCmd )
 {
   INT i;
-  WNDCLASSEX wc;
+  WNDCLASS wc;
   HWND hWnd;
   MSG msg;
+  /* Регистрация класса окна */
+  wc.style = CS_VREDRAW | CS_HREDRAW;                   /* Стиль окна: полностью перерисовывать
+                                                             * при изменении вертикального или
+                                                             * горизонтального размеров
+                                                             * еще можно CS_DBLCLKS для добавления
+                                                             * отработки двойного нажатия */
+  wc.cbClsExtra = 0;                                    /* Дополнительное количество байт для класса */
+  wc.cbWndExtra = 0;                                    /* Дополнительное количество байт для окна */
+  wc.hbrBackground = CreateSolidBrush(RGB(255, 255, 0));
+  wc.hCursor = LoadCursor(NULL, IDC_ARROW);             /* Загрузка курсора (системного) */
+  wc.hIcon = LoadIcon(NULL, IDI_ASTERISK);              /* Загрузка пиктограммы (системной) */
+  wc.hInstance = hInstance;                             /* Дескриптор приложения, регистрирующего класс */
+  wc.lpszMenuName = NULL;                               /* Имя ресурса меню */
+  wc.lpfnWndProc = MyWindowFunc;                        /* Указатель на функцию обработки */
+  wc.lpszClassName = WND_CLASS_NAME;
 
-  /* Регистрация - создание собственного класса окна */
-  wc.cbSize = sizeof(WNDCLASSEX);      /* Размер структуры для совместимости */
-  wc.style = CS_VREDRAW | CS_HREDRAW;  /* Стиль окна: полностью перерисовывать
-                                        * при изменении вертикального или
-                                        * горизонтального размеров (еще CS_DBLCLKS) */
-  wc.cbClsExtra = 0;                   /* Дополнительное количество байт для класса */
-  wc.cbWndExtra = 0;                   /* Дополнительное количество байт для окна */
-  wc.hbrBackground = (HBRUSH)COLOR_WINDOW;      /* Фоновый цвет - выбранный в системе */
-  wc.hCursor = LoadCursor(NULL, IDC_ARROW);     /* Загрузка курсора (системного) */
-  wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);   /* Загрузка пиктограммы (системной) */
-  wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION); /* Загрузка малой пиктограммы (системной) */
-  wc.lpszMenuName = NULL;                       /* Имя ресурса меню */
-  wc.hInstance = hInstance;                     /* Дескриптор приложения, регистрирующего класс */
-  wc.lpfnWndProc = MainWindowFunc;              /* Указатель на функцию обработки */
-  wc.lpszClassName = WND_CLASS_NAME;            /* Имя класса */
-
-  /* Регистрируем класс */
-  if (!RegisterClassEx(&wc))
+  /* Регистрация класса в системе */
+  if (!RegisterClass(&wc))
   {
-    MessageBox(NULL, "Error register window class", "Error", MB_ICONERROR | MB_OK);
+    MessageBox(NULL, "Error register window class", "ERROR", MB_OK);
     return 0;
   }
 
   /* Создание окна */
-  hWnd = CreateWindow(WND_CLASS_NAME, "First Window Sample",
-    WS_OVERLAPPEDWINDOW,          /* Стиль окна - перекрывающееся */
-    CW_USEDEFAULT, CW_USEDEFAULT, /* Позиция окна (x, y) - по умолчанию */
-    CW_USEDEFAULT, CW_USEDEFAULT, /* Размеры окна (w, h) - по умолчанию */
-    NULL,                         /* Дескриптор родительского окна */
-    NULL,                         /* Дескриптор загруженного меню */
-    hInstance,                    /* Дескриптор приложения */
-    NULL);                        /* Указатель на дополнительные параметры */
+  hWnd =
+    CreateWindow(WND_CLASS_NAME,    /* Имя класса окна */
+      "Object",                      /* Заголовок окна */
+      WS_OVERLAPPEDWINDOW,          /* Стили окна - окно общего вида */
+      CW_USEDEFAULT, CW_USEDEFAULT, /* Позиция окна (x, y) - по умолчанию */
+      CW_USEDEFAULT, CW_USEDEFAULT, /* Размеры окна (w, h) - по умолчанию */
+      NULL,                         /* Дескриптор родительского окна */
+      NULL,                         /* Дескриптор загруженного меню */
+      hInstance,                    /* Дескриптор приложения */
+      NULL);                        /* Указатель на дополнительные параметры */
 
-  /* Отобразить с заданными параметрами */
   ShowWindow(hWnd, ShowCmd);
-  /* Отрисовать немедленно */
   UpdateWindow(hWnd);
 
-  /*** Добавление объектов ***/
-  for (i = 0; i < 300; i++)
-    VG4_AnimAddUnit(VG4_UnitBallCreate());
+  /* Adding the units */
 
-  /* Запуск цикла обработки сообщений */
+/*  for (i = 0; i < 59; i++)
+    PD6_AnimAddUnit(PD6_UnitRectCreate());*/
+  /* Add the balls */
+  for (i = 0; i < 300; i++)
+    PD6_AnimAddUnit(PD6_UnitBallCreate());
+  /* Add the cow */
+  PD6_AnimAddUnit(PD6_UnitCowCreate());
+  /* Add the Control Unit */
+  PD6_AnimAddUnit(PD6_UnitControlCreate());
+
+  /* Запуск цикла сообщений окна */
   while (GetMessage(&msg, NULL, 0, 0))
-  {
-    /* Дополнительная обработка сообщений от клавиатуры (->WM_CHAR) */
-    TranslateMessage(&msg);
     /* Передача сообщений в функцию окна */
     DispatchMessage(&msg);
-  }
 
-  return msg.wParam;
+  return 30;
 } /* End of 'WinMain' function */
+
+
+/* Функция переключения в/из полноэкранного режима
+ * с учетом нескольких мониторов.
+ * АРГУМЕНТЫ: 
+ *   - дескриптор окна:
+ *       HWND hWnd;
+ * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ: Нет.
+ */
+VOID FlipFullScreen( HWND hWnd )
+{
+  static BOOL IsFullScreen = FALSE;
+  static RECT SaveRC;
+
+  if (!IsFullScreen)
+  {
+    RECT rc;
+    HMONITOR hmon;
+    MONITORINFOEX moninfo;
+
+    /* Save old size of window */
+    GetWindowRect(hWnd, &SaveRC);
+
+    hmon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+
+    moninfo.cbSize = sizeof(moninfo);
+    GetMonitorInfo(hmon, (MONITORINFO *)&moninfo);
+
+    /* переходим в полный экран */
+    /* для одного монитора:
+    rc.left = 0;
+    rc.top = 0;
+    rc.right = GetSystemMetrics(SM_CXSCREEN);
+    rc.bottom = GetSystemMetrics(SM_CXSCREEN);
+    */
+
+    rc = moninfo.rcMonitor;
+
+    AdjustWindowRect(&rc, GetWindowLong(hWnd, GWL_STYLE), FALSE);
+
+    SetWindowPos(hWnd, HWND_TOP, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top,
+      SWP_NOOWNERZORDER);
+    IsFullScreen = TRUE;
+  }
+  else
+  {
+    SetWindowPos(hWnd, HWND_TOPMOST, SaveRC.left, SaveRC.top,
+      SaveRC.right - SaveRC.left, SaveRC.bottom - SaveRC.top,
+      SWP_NOOWNERZORDER);
+    IsFullScreen = FALSE;
+  }
+} /* End of 'FlipFullScreen' function */
+
 
 /* Функция обработки сообщения окна.
  * АРГУМЕНТЫ:
@@ -101,7 +167,7 @@ INT WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
  * ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ:
  *   (LRESULT) - в зависимости от сообщения.
  */
-LRESULT CALLBACK MainWindowFunc( HWND hWnd, UINT Msg,
+LRESULT CALLBACK MyWindowFunc( HWND hWnd, UINT Msg,
                                  WPARAM wParam, LPARAM lParam )
 {
   HDC hDC;
@@ -111,25 +177,40 @@ LRESULT CALLBACK MainWindowFunc( HWND hWnd, UINT Msg,
   {
   case WM_CREATE:
     SetTimer(hWnd, 30, 1, NULL);
-    VG4_AnimInit(hWnd);
+    PD6_AnimInit(hWnd);
     return 0;
+
   case WM_SIZE:
-    VG4_AnimResize(LOWORD(lParam), HIWORD(lParam));
-    VG4_AnimRender();
+    PD6_AnimResize(LOWORD(lParam), HIWORD(lParam));
+    PD6_AnimRender();
     return 0;
+
   case WM_TIMER:
-    VG4_AnimRender();
-    VG4_AnimCopyFrame();
+    PD6_AnimRender();
+    PD6_AnimCopyFrame();
     return 0;
+
+  case WM_MOUSEWHEEL:
+    PD6_MouseWheel += (SHORT)HIWORD(wParam) / WHEEL_DELTA;
+    return 0;
+
   case WM_ERASEBKGND:
     return 1;
+
   case WM_PAINT:
     hDC = BeginPaint(hWnd, &ps);
     EndPaint(hWnd, &ps);
-    VG4_AnimCopyFrame();
+    PD6_AnimCopyFrame();
     return 0;
+
+  case WM_CLOSE:
+    if (MessageBox(hWnd, "Are you sure to exit from program?",
+          "Exit", MB_YESNO | MB_ICONQUESTION) == IDNO)
+      return 0;
+    break;
+
   case WM_DESTROY:
-    VG4_AnimClose();
+    PD6_AnimClose();
     PostQuitMessage(0);
     KillTimer(hWnd, 30);
     return 0;
@@ -137,7 +218,4 @@ LRESULT CALLBACK MainWindowFunc( HWND hWnd, UINT Msg,
   return DefWindowProc(hWnd, Msg, wParam, lParam);
 } /* End of 'MainWindowFunc' function */
 
-
-
-
-
+/* END OF 'MAIN.C' FILE */

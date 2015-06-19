@@ -17,4 +17,4 @@ typedef double DBL;
 
 #endif /* __DEF_H_ */
 
-/* End of 'DEF.H' file */
+/* END OF 'DEF.H' FILE */
